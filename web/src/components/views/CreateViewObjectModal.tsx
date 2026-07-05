@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as Dialog from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
 import { ViewType } from '@/types/view'
+import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 
 interface CreateViewObjectModalProps {
     open: boolean
@@ -144,22 +144,19 @@ const CreateViewObjectModal = ({
             )}
 
             <div className="flex justify-end gap-2 pt-2">
-                <button
-                    type="button"
+                <Button
+                    variant="outline"
                     onClick={() => onOpenChange(false)}
-                    className="px-4 py-2 border dark:border-neutral-600 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
                     disabled={isSubmitting}
                 >
                     {t('common.cancel', 'Cancel')}
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     onClick={onSubmit}
                     disabled={isSubmitting || !isValid()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isSubmitting ? t('common.saving', 'Saving...') : t('common.create', 'Create')}
-                </button>
+                </Button>
             </div>
         </div>
     )
@@ -169,24 +166,15 @@ const CreateViewObjectModal = ({
     }
 
     return (
-        <Dialog.Root open={open} onOpenChange={onOpenChange}>
-            <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[90vw] max-w-[480px] z-50">
-                    <div className="flex items-center justify-between mb-4">
-                        <Dialog.Title className="text-xl font-semibold">
-                            {t('views.createObject', 'Create')}
-                        </Dialog.Title>
-                        <Dialog.Close asChild>
-                            <button className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded">
-                                <X size={20} />
-                            </button>
-                        </Dialog.Close>
-                    </div>
-                    {form}
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+        <Modal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={t('views.createObject', 'Create')}
+            className="max-w-[480px]"
+            showClose
+        >
+            {form}
+        </Modal>
     )
 }
 
