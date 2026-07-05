@@ -15,7 +15,6 @@ type DB interface {
 	WorkspaceUserRepository
 	ViewRepository
 	ViewObjectRepository
-	WidgetRepository
 	APIKeyRepository
 }
 type Uow interface {
@@ -72,13 +71,6 @@ type ViewObjectRepository interface {
 	DeleteViewObject(v model.ViewObject) error
 	FindViewObject(v model.ViewObject) (model.ViewObject, error)
 	FindViewObjects(f model.ViewObjectFilter) ([]model.ViewObject, error)
-}
-type WidgetRepository interface {
-	CreateWidget(w model.Widget) error
-	UpdateWidget(w model.Widget) error
-	DeleteWidget(w model.Widget) error
-	FindWidget(w model.Widget) (model.Widget, error)
-	FindWidgets(f model.WidgetFilter) ([]model.Widget, error)
 }
 type APIKeyRepository interface {
 	CreateAPIKey(k model.APIKey) error

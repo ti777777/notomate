@@ -1,4 +1,3 @@
-import { Dialog } from "radix-ui"
 import { useTranslation } from "react-i18next"
 import { useTheme, Theme } from "@/providers/Theme"
 import { useCurrentUserStore } from "@/stores/current-user"
@@ -9,6 +8,8 @@ import { listAPIKeys, createAPIKey, deleteAPIKey, APIKey, CreateAPIKeyRequest } 
 import { listUsers, createUser, deleteUser, updateUserPassword, disableUser, enableUser, AdminUser, CreateUserRequest, UpdateUserPasswordRequest } from "@/api/admin"
 import Card from "@/components/card/Card"
 import Select from "@/components/select/Select"
+import { Modal } from "@/components/ui/modal"
+import { Button } from "@/components/ui/button"
 import { Trash2, Plus, Copy, AlertTriangle, Edit, UserX, UserCheck, Check } from "lucide-react"
 
 interface UserSettingsModalProps {
@@ -319,14 +320,12 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
 
     return (
         <>
-            <Dialog.Root open={open} onOpenChange={onOpenChange}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[1000]" />
-                    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[90vw] max-w-[800px] max-h-[85vh] z-[1001] flex flex-col">
-                        <Dialog.Title className="text-xl font-semibold mb-4">
-                            {t("menu.settings")}
-                        </Dialog.Title>
-
+            <Modal
+                open={open}
+                onOpenChange={onOpenChange}
+                title={t("menu.settings")}
+                className="max-w-[800px] max-h-[85vh] flex flex-col"
+            >
                         {/* Tabs */}
                         <div className="flex gap-2 border-b border-gray-200 dark:border-neutral-700 mb-4">
                             <button
@@ -448,13 +447,10 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                             {t("pages.preferences.apiKeyDescription")}
                                         </p>
-                                        <button
-                                            onClick={() => setShowCreationDialog(true)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
-                                        >
+                                        <Button onClick={() => setShowCreationDialog(true)}>
                                             <Plus size={16} />
                                             {t("pages.preferences.generateNewKey")}
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     {loading ? (
@@ -516,13 +512,10 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                             {t("pages.preferences.userList")}
                                         </p>
-                                        <button
-                                            onClick={() => setShowUserDialog(true)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
-                                        >
+                                        <Button onClick={() => setShowUserDialog(true)}>
                                             <Plus size={16} />
                                             {t("pages.preferences.createUser")}
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     {usersLoading ? (
@@ -606,19 +599,15 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                                 </div>
                             )}
                         </div>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            </Modal>
 
             {/* API Key Creation Dialog */}
-            <Dialog.Root open={showCreationDialog} onOpenChange={setShowCreationDialog}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[1002]" />
-                    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[90vw] max-w-[500px] z-[1003]">
-                        <Dialog.Title className="text-xl font-semibold mb-4">
-                            {t("pages.preferences.createNewKey")}
-                        </Dialog.Title>
-
+            <Modal
+                open={showCreationDialog}
+                onOpenChange={setShowCreationDialog}
+                title={t("pages.preferences.createNewKey")}
+                nested
+            >
                         {createdKey ? (
                             <div className="space-y-4">
                                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -639,25 +628,26 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                                             readOnly
                                             className="flex-1 px-3 py-2 border rounded-md font-mono text-sm bg-gray-50 dark:bg-neutral-900"
                                         />
-                                        <button
+                                        <Button
+                                            size="icon"
                                             onClick={() => copyToClipboard(createdKey)}
-                                            className="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
                                             title={t("actions.copy")}
                                         >
                                             <Copy size={16} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
 
-                                <button
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
                                     onClick={() => {
                                         setCreatedKey(null)
                                         setShowCreationDialog(false)
                                     }}
-                                    className="w-full px-4 py-2 bg-gray-200 dark:bg-neutral-700 rounded-md hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors"
                                 >
                                     {t("pages.preferences.done")}
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -685,34 +675,24 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={handleCreateAPIKey}
-                                        className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
-                                    >
+                                    <Button className="flex-1" onClick={handleCreateAPIKey}>
                                         {t("pages.preferences.createKey")}
-                                    </button>
-                                    <button
-                                        onClick={() => setShowCreationDialog(false)}
-                                        className="px-4 py-2 bg-gray-200 dark:bg-neutral-700 rounded-md hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors"
-                                    >
+                                    </Button>
+                                    <Button variant="outline" onClick={() => setShowCreationDialog(false)}>
                                         {t("actions.cancel")}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         )}
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            </Modal>
 
             {/* Create User Dialog */}
-            <Dialog.Root open={showUserDialog} onOpenChange={setShowUserDialog}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[1002]" />
-                    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[90vw] max-w-[500px] z-[1003]">
-                        <Dialog.Title className="text-xl font-semibold mb-4">
-                            {t("pages.preferences.createUser")}
-                        </Dialog.Title>
-
+            <Modal
+                open={showUserDialog}
+                onOpenChange={setShowUserDialog}
+                title={t("pages.preferences.createUser")}
+                nested
+            >
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">{t("pages.preferences.userName")}</label>
@@ -770,36 +750,29 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                             </div>
 
                             <div className="flex gap-2">
-                                <button
-                                    onClick={handleCreateUser}
-                                    className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
-                                >
+                                <Button className="flex-1" onClick={handleCreateUser}>
                                     {t("actions.create")}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     onClick={() => {
                                         setShowUserDialog(false)
                                         setUserFormData({ name: "", email: "", password: "", confirmPassword: "", role: "user" })
                                     }}
-                                    className="px-4 py-2 bg-gray-200 dark:bg-neutral-700 rounded-md hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors"
                                 >
                                     {t("actions.cancel")}
-                                </button>
+                                </Button>
                             </div>
                         </div>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            </Modal>
 
             {/* Change Password Dialog */}
-            <Dialog.Root open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[1002]" />
-                    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[90vw] max-w-[500px] z-[1003]">
-                        <Dialog.Title className="text-xl font-semibold mb-4">
-                            {t("pages.preferences.changePassword")}
-                        </Dialog.Title>
-
+            <Modal
+                open={showPasswordDialog}
+                onOpenChange={setShowPasswordDialog}
+                title={t("pages.preferences.changePassword")}
+                nested
+            >
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">{t("pages.preferences.newPassword")}</label>
@@ -824,26 +797,21 @@ const UserSettingsModal = ({ open, onOpenChange }: UserSettingsModalProps) => {
                             </div>
 
                             <div className="flex gap-2">
-                                <button
-                                    onClick={handleChangePassword}
-                                    className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
-                                >
+                                <Button className="flex-1" onClick={handleChangePassword}>
                                     {t("actions.save")}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     onClick={() => {
                                         setShowPasswordDialog(false)
                                         setPasswordFormData({ userId: "", newPassword: "", confirmPassword: "" })
                                     }}
-                                    className="px-4 py-2 bg-gray-200 dark:bg-neutral-700 rounded-md hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors"
                                 >
                                     {t("actions.cancel")}
-                                </button>
+                                </Button>
                             </div>
                         </div>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            </Modal>
         </>
     )
 }
