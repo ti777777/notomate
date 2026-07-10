@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/collabreef/collabreef/internal/db"
+	"github.com/collabreef/collabreef/internal/model"
 	"github.com/collabreef/collabreef/internal/storage"
 )
 
@@ -12,11 +13,12 @@ type Handler struct {
 }
 
 // WorkflowEngine is the part of the workflow trigger engine handlers need:
-// reloading cron schedules after definitions change and waking runners
-// long-polling for queued jobs.
+// reloading cron schedules after definitions change, waking runners
+// long-polling for queued jobs, and reporting note events.
 type WorkflowEngine interface {
 	ReloadSchedules()
 	WakeQueue()
+	NotifyNoteEvent(event string, note model.Note, actorID string)
 }
 
 func NewHandler(r db.DB, s storage.Storage) *Handler {

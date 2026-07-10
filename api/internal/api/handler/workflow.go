@@ -272,3 +272,11 @@ func (h Handler) notifyRunQueued() {
 		h.workflowEngine.WakeQueue()
 	}
 }
+
+// notifyNoteEvent reports a note change to the trigger engine (no-op when no
+// engine is attached).
+func (h Handler) notifyNoteEvent(event string, note model.Note, actorID string) {
+	if h.workflowEngine != nil {
+		h.workflowEngine.NotifyNoteEvent(event, note, actorID)
+	}
+}

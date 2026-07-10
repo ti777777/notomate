@@ -13,6 +13,7 @@ import (
 
 	"github.com/collabreef/collabreef/internal/db"
 	"github.com/collabreef/collabreef/internal/model"
+	"github.com/collabreef/collabreef/internal/workflow"
 )
 
 // ---------- Request / Response types (JSON-serialized) ----------
@@ -145,7 +146,8 @@ func registerCollabServiceServer(s *grpc.Server, srv CollabServiceServer) {
 // ---------- Implementation ----------
 
 type collabServer struct {
-	db db.DB
+	db     db.DB
+	engine *workflow.Engine
 }
 
 func (s *collabServer) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
@@ -228,6 +230,9 @@ func (s *collabServer) UpdateNote(ctx context.Context, req *UpdateNoteRequest) (
 	if err := s.db.UpdateNote(note); err != nil {
 		return nil, status.Errorf(codes.Internal, "update note: %v", err)
 	}
+	if s.engine != nil {
+		s.engine.NotifyNoteEvent(model.WorkflowEventNoteUpdated, note, req.UpdatedBy)
+	}
 	return &UpdateNoteResponse{}, nil
 }
 
@@ -242,13 +247,13 @@ func (s *collabServer) UpdateViewData(ctx context.Context, req *UpdateViewDataRe
 
 // ---------- Start ----------
 
-func Start(database db.DB, port string) {
+func Start(database db.DB, port string, engine *workflow.Engine) {
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("[gRPC] listen on :%s failed: %v", port, err)
 	}
 	srv := grpc.NewServer()
-	registerCollabServiceServer(srv, &collabServer{db: database})
+	registerCollabServiceServer(srv, &collabServer{db: database, engine: engine})
 	log.Printf("[gRPC] ColabService listening on :%s", port)
 	if err := srv.Serve(lis); err != nil {
 		log.Fatalf("[gRPC] serve failed: %v", err)
