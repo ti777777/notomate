@@ -1,17 +1,18 @@
-# GitHub Release 通知
+# GitHub Release Watch
 #
-# 監控指定 GitHub repo 的最新 release,有新版本時建立一則筆記。示範重點:
-# 用 vars 參數化要監控的目標(repo),並用搜尋既有筆記做去重判斷。
+# Monitors the latest release of a given GitHub repo and creates a note when
+# a new one is published. Demonstrates: parameterizing the watch target via
+# vars, and deduping against existing notes with a search.
 #
-# 事前準備
-#   1. 到「使用者設定 > API Keys」建立一組 API key。
-#   2. 到 workspace 的「工作流」設定頁,新增:
-#        secrets: CB_API_KEY      = 上一步產生的 API key
-#                 (選填) GITHUB_TOKEN = GitHub personal access token,
-#                        避免匿名 API 呼叫的 rate limit 太低
-#        vars:    CB_API_BASE_URL = api 服務可連到的位址,例如
-#                                    http://collabreef-api:8080
-#                 GITHUB_REPO      = 要監控的 repo,格式 owner/name
+# Setup
+#   1. Go to "User Settings > API Keys" and create an API key.
+#   2. Go to the workspace's "Workflows" settings page and add:
+#        secrets: CB_API_KEY      = the API key from step 1
+#                 (optional) GITHUB_TOKEN = a GitHub personal access token,
+#                        to avoid the low rate limit on anonymous API calls
+#        vars:    CB_API_BASE_URL = an address the runner container can
+#                                    reach, e.g. http://collabreef-api:8080
+#                 GITHUB_REPO      = the repo to watch, as owner/name
 name: GitHub Releases Watch
 on:
   schedule:
@@ -72,8 +73,8 @@ jobs:
             const content = [
               `**Repo:** ${REPO}`,
               `**Tag:** ${release.tag_name}`,
-              `**發布時間:** ${release.published_at}`,
-              `**連結:** ${release.html_url}`,
+              `**Published:** ${release.published_at}`,
+              `**URL:** ${release.html_url}`,
               "",
               release.body || "(no release notes)",
             ].join("\n");

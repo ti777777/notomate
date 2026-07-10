@@ -1,15 +1,17 @@
-# Hacker News 每日摘要
+# Hacker News Daily Digest
 #
-# 每天抓取 Hacker News 排行前幾名的story,彙整成一則筆記。示範重點:
-# 呼叫一般 JSON API(不需要金鑰)+ 只建立「單一」彙整筆記,而不是每篇一則。
+# Fetches the top Hacker News stories each day and rolls them up into a
+# single note. Demonstrates: calling a plain JSON API (no key needed), and
+# creating just one digest note instead of one per item.
 #
-# 事前準備
-#   1. 到「使用者設定 > API Keys」建立一組 API key。
-#   2. 到 workspace 的「工作流」設定頁,新增:
-#        secrets: CB_API_KEY      = 上一步產生的 API key
-#        vars:    CB_API_BASE_URL = api 服務可連到的位址,例如
-#                                    http://collabreef-api:8080
-#                 (選填) HN_STORY_COUNT = 要收錄的story數量,預設 10
+# Setup
+#   1. Go to "User Settings > API Keys" and create an API key.
+#   2. Go to the workspace's "Workflows" settings page and add:
+#        secrets: CB_API_KEY      = the API key from step 1
+#        vars:    CB_API_BASE_URL = an address the runner container can
+#                                    reach, e.g. http://collabreef-api:8080
+#                 (optional) HN_STORY_COUNT = number of stories to include,
+#                        defaults to 10
 name: Hacker News Daily Digest
 on:
   schedule:
