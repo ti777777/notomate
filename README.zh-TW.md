@@ -99,21 +99,25 @@ Job 可透過 `$GITHUB_EVENT_PATH` 讀取事件內容,並有 `CB_EVENT_NAME`、`
 
 ### 啟用 Runner
 
-Runner 為選用服務。為 api 與 runner 設定相同的 `RUNNER_REGISTRATION_TOKEN`(參閱 `.env.example`),並加入 runner 容器(需掛載 Docker socket):
+Runner 為選用服務,自成一個獨立的 compose 專案(`docker-compose.runner.yml`),可以不依附核心服務單獨啟動,甚至跑在不同主機上:
+
+```bash
+docker compose -f docker-compose.runner.yml up -d
+```
+
+`docker-compose.yml` 會把 api 的 gRPC 埠發布到 `127.0.0.1:50051`,同一台主機上的 runner 預設用 `host.docker.internal:50051` 即可連上。若 runner 要跑在別的主機,需要把該埠更開放地發布出去(請留意下方安全性注意事項),並把 `CB_INSTANCE_ADDR` 指向該主機:
 
 ```yaml
-  runner:
+  collabreef-runner:
     image: ti777777/collabreef-runner
     container_name: collabreef-runner
     environment:
-      CB_INSTANCE_ADDR: collabreef-api:50051
+      CB_INSTANCE_ADDR: host.docker.internal:50051 # 或 remote-host:50051
       CB_RUNNER_REGISTRATION_TOKEN: your-registration-token
       CB_RUNNER_LABELS: ubuntu-latest:docker://node:20-bullseye
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - collabreef_runner_data:/data
-    depends_on:
-      - api
     restart: unless-stopped
 ```
 
@@ -123,7 +127,7 @@ Runner 為選用服務。為 api 與 runner 設定相同的 `RUNNER_REGISTRATION
 
 - 工作流會在 runner 主機的 Docker daemon 上執行任意指令。僅 workspace 擁有者/管理員可建立或編輯工作流,runner 主機屬於你的信任邊界。
 - 請勿在工作流 YAML 中放入機密 — 定義對所有 workspace 成員可見。若 job 需要呼叫 CollabReef API,請使用 API key,並注意會修改筆記的工作流可能自我觸發(每個工作流每分鐘 30 次執行的上限為保險機制)。
-- gRPC 連接埠(50051)請保留在內部網路;runner 協定有 token 驗證但無 TLS。
+- runner 協定有 token 驗證但無 TLS。gRPC 連接埠(50051)不要暴露在公開網路上 —— `docker-compose.yml` 預設綁定 `127.0.0.1:50051` 只允許同主機存取,若 runner 在遠端,只能透過受信任的網路(VPN、私有網路)才放寬綁定範圍。
 
 ## 貢獻
 

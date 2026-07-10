@@ -99,21 +99,25 @@ Jobs see the event payload at `$GITHUB_EVENT_PATH` plus `CB_EVENT_NAME`, `CB_WOR
 
 ### Running a runner
 
-The runner is opt-in. Set a shared `RUNNER_REGISTRATION_TOKEN` for the api and runner services (see `.env.example`) and add the runner container — it needs the Docker socket:
+The runner is opt-in and lives in its own compose project (`docker-compose.runner.yml`) so it can be started independently of the core stack, even on a different host:
+
+```bash
+docker compose -f docker-compose.runner.yml up -d
+```
+
+`docker-compose.yml` publishes the api's gRPC port to `127.0.0.1:50051` so a runner on the same host can reach it at `host.docker.internal:50051` (the default). If the runner runs on a different host, publish the port more broadly (mind the security note below) and point `CB_INSTANCE_ADDR` at that host:
 
 ```yaml
-  runner:
+  collabreef-runner:
     image: ti777777/collabreef-runner
     container_name: collabreef-runner
     environment:
-      CB_INSTANCE_ADDR: collabreef-api:50051
+      CB_INSTANCE_ADDR: host.docker.internal:50051 # or remote-host:50051
       CB_RUNNER_REGISTRATION_TOKEN: your-registration-token
       CB_RUNNER_LABELS: ubuntu-latest:docker://node:20-bullseye
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - collabreef_runner_data:/data
-    depends_on:
-      - api
     restart: unless-stopped
 ```
 
@@ -123,7 +127,7 @@ Instance admins can see registered runners and the registration token in workspa
 
 - Workflows execute arbitrary commands on the runner host's Docker daemon. Only workspace owners/admins can create or edit workflows, and the runner host is part of your trust boundary.
 - Don't paste secrets into workflow YAML — definitions are readable by all workspace members. If a job needs to call the CollabReef API, use an API key and be aware that a workflow that modifies notes can retrigger itself (a per-workflow rate limit of 30 runs/minute is the backstop).
-- Keep the gRPC port (50051) on the internal network; the runner protocol has token auth but no TLS.
+- The runner protocol has token auth but no TLS. Keep the gRPC port (50051) off the public internet — the default `127.0.0.1:50051` binding in `docker-compose.yml` only allows same-host access; widen it only over a trusted network (VPN, private network) if the runner is remote.
 
 ## Contributing
 
