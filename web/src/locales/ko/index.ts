@@ -7,6 +7,7 @@ export default {
   menu: {
     notes: "노트",
     files: "파일",
+    workflows: "Workflows",
     views: "보기",
     createWithName: "워크스페이스 생성：{{name}}",
     workspaceSettings: "워크스페이스 설정",
@@ -28,6 +29,27 @@ export default {
     version: "버전",
   },
   pages: {
+    workflows: {
+      title: "Workflows",
+      newWorkflow: "New Workflow",
+      runs: "Runs",
+      noRuns: "No runs yet",
+      noWorkflows: "No workflows yet. Create one to automate your workspace.",
+      enabled: "Enabled",
+      disabled: "Disabled",
+      name: "Name",
+      namePlaceholder: "e.g. Notify on note changes",
+      definition: "Definition (YAML)",
+      dispatch: "Run",
+      runWorkflow: "Run workflow",
+      deleteConfirm: "Delete this workflow?",
+      workflowSaved: "Workflow saved",
+      workflowDeleted: "Workflow deleted",
+      dispatched: "Workflow run queued",
+      validationFailed: "Workflow definition is invalid",
+      jobs: "Jobs",
+      noInputs: "This workflow has no inputs."
+    },
     signin: {
       "noAccount": "계정이 없으신가요?"
     },

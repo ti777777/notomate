@@ -7,6 +7,7 @@ export default {
   menu: {
     notes: "Notas",
     files: "Arquivos",
+    workflows: "Workflows",
     views: "Exibições",
     createWithName: "Criar workspace: {{name}}",
     workspaceSettings: "Configurações do Workspace",
@@ -28,6 +29,27 @@ export default {
     version: "Versão",
   },
   pages: {
+    workflows: {
+      title: "Workflows",
+      newWorkflow: "New Workflow",
+      runs: "Runs",
+      noRuns: "No runs yet",
+      noWorkflows: "No workflows yet. Create one to automate your workspace.",
+      enabled: "Enabled",
+      disabled: "Disabled",
+      name: "Name",
+      namePlaceholder: "e.g. Notify on note changes",
+      definition: "Definition (YAML)",
+      dispatch: "Run",
+      runWorkflow: "Run workflow",
+      deleteConfirm: "Delete this workflow?",
+      workflowSaved: "Workflow saved",
+      workflowDeleted: "Workflow deleted",
+      dispatched: "Workflow run queued",
+      validationFailed: "Workflow definition is invalid",
+      jobs: "Jobs",
+      noInputs: "This workflow has no inputs."
+    },
     signin: {
       "noAccount": "Não tem uma conta?"
     },

@@ -7,6 +7,7 @@ export default {
   menu: {
     notes: "الملاحظات",
     files: "الملفات",
+    workflows: "Workflows",
     views: "العروض",
     createWithName: "إنشاء مساحة عمل: {{name}}",
     workspaceSettings: "إعدادات مساحة العمل",
@@ -28,6 +29,27 @@ export default {
     version: "الإصدار",
   },
   pages: {
+    workflows: {
+      title: "Workflows",
+      newWorkflow: "New Workflow",
+      runs: "Runs",
+      noRuns: "No runs yet",
+      noWorkflows: "No workflows yet. Create one to automate your workspace.",
+      enabled: "Enabled",
+      disabled: "Disabled",
+      name: "Name",
+      namePlaceholder: "e.g. Notify on note changes",
+      definition: "Definition (YAML)",
+      dispatch: "Run",
+      runWorkflow: "Run workflow",
+      deleteConfirm: "Delete this workflow?",
+      workflowSaved: "Workflow saved",
+      workflowDeleted: "Workflow deleted",
+      dispatched: "Workflow run queued",
+      validationFailed: "Workflow definition is invalid",
+      jobs: "Jobs",
+      noInputs: "This workflow has no inputs."
+    },
     signin: {
       "noAccount": "ليس لديك حساب؟"
     },

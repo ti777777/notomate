@@ -7,6 +7,7 @@ export default {
   menu: {
     notes: "笔记",
     files: "文件",
+    workflows: "工作流",
     views: "视图",
     createWithName: "创建工作区：{{name}}",
     workspaceSettings: "工作区设置",
@@ -28,6 +29,27 @@ export default {
     version: "版本",
   },
   pages: {
+    workflows: {
+      title: "工作流",
+      newWorkflow: "新建工作流",
+      runs: "运行记录",
+      noRuns: "暂无运行记录",
+      noWorkflows: "暂无工作流。创建一个来自动化你的工作区。",
+      enabled: "已启用",
+      disabled: "已停用",
+      name: "名称",
+      namePlaceholder: "例如:笔记变更时通知",
+      definition: "定义(YAML)",
+      dispatch: "运行",
+      runWorkflow: "运行工作流",
+      deleteConfirm: "确定删除这个工作流?",
+      workflowSaved: "工作流已保存",
+      workflowDeleted: "工作流已删除",
+      dispatched: "已加入运行队列",
+      validationFailed: "工作流定义无效",
+      jobs: "作业",
+      noInputs: "这个工作流没有输入参数。"
+    },
     signin: {
       "noAccount": "没有账户？"
     },
