@@ -10,7 +10,7 @@ A simple, self-hosted, all-in-one note-taking app.
 
 </div>
 
-Write anything, anywhere — memos, journals, work notes, checklists, or a blog. The block-based editor supports rich text, media, embeds, and more, so you can capture complete notes in one place. Fully self-hosted, so your data stays yours.
+Write anything, anywhere — memos, journals, work notes, checklists, or a blog. The block-based editor supports rich text, media, embeds, and more, so you can capture complete notes in one place. A built-in, GitHub-Actions-style [workflow engine](#workflows-beta) lets you automate note-taking too — schedule AI-powered digests, aggregate external data, or wire up notifications. Fully self-hosted, so your data stays yours.
 
 ## Installation
 
