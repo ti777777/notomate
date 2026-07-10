@@ -18,6 +18,8 @@ type DB interface {
 	APIKeyRepository
 	WorkflowRepository
 	WorkflowRunRepository
+	WorkflowVarRepository
+	WorkflowSecretRepository
 	RunnerRepository
 	SettingRepository
 }
@@ -109,6 +111,18 @@ type WorkflowRunRepository interface {
 	AppendWorkflowJobLogs(jobID string, startLine int, lines []string, createdAt string) error
 	FindWorkflowJobLogs(jobID string, afterLine int, limit int) ([]model.WorkflowJobLog, error)
 	CountWorkflowJobLogs(jobID string) (int, error)
+}
+type WorkflowVarRepository interface {
+	CreateWorkflowVar(v model.WorkflowVar) error
+	FindWorkflowVars(workspaceID string) ([]model.WorkflowVar, error)
+	UpdateWorkflowVar(workspaceID, key, value, updatedAt, updatedBy string) error
+	DeleteWorkflowVar(workspaceID, key string) error
+}
+type WorkflowSecretRepository interface {
+	CreateWorkflowSecret(s model.WorkflowSecret) error
+	FindWorkflowSecrets(workspaceID string) ([]model.WorkflowSecret, error)
+	UpdateWorkflowSecret(workspaceID, key, valueEncrypted, updatedAt, updatedBy string) error
+	DeleteWorkflowSecret(workspaceID, key string) error
 }
 type RunnerRepository interface {
 	CreateRunner(r model.Runner) error

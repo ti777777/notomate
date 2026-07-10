@@ -94,3 +94,27 @@ type WorkflowJobLog struct {
 	Content   string `json:"content"`
 	CreatedAt string `json:"created_at"`
 }
+
+type WorkflowVar struct {
+	ID          string `json:"id"`
+	WorkspaceID string `json:"workspace_id"`
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+	CreatedAt   string `json:"created_at"`
+	CreatedBy   string `json:"created_by"`
+	UpdatedAt   string `json:"updated_at"`
+	UpdatedBy   string `json:"updated_by"`
+}
+
+// WorkflowSecret never exposes its encrypted value over JSON; the API is
+// write-only for secrets, like GitHub Actions.
+type WorkflowSecret struct {
+	ID             string `json:"id"`
+	WorkspaceID    string `json:"workspace_id"`
+	Key            string `json:"key"`
+	ValueEncrypted string `json:"-"`
+	CreatedAt      string `json:"created_at"`
+	CreatedBy      string `json:"created_by"`
+	UpdatedAt      string `json:"updated_at"`
+	UpdatedBy      string `json:"updated_by"`
+}

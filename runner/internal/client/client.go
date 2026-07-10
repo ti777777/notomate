@@ -30,15 +30,17 @@ type FetchTaskResponse struct {
 	Job   *TaskPayload `json:"job,omitempty"`
 }
 type TaskPayload struct {
-	JobID            string `json:"job_id"`
-	RunID            string `json:"run_id"`
-	RunNumber        int    `json:"run_number"`
-	WorkspaceID      string `json:"workspace_id"`
-	WorkflowName     string `json:"workflow_name"`
-	JobName          string `json:"job_name"`
-	WorkflowYAML     string `json:"workflow_yaml"`
-	EventName        string `json:"event_name"`
-	EventPayloadJSON string `json:"event_payload_json"`
+	JobID            string            `json:"job_id"`
+	RunID            string            `json:"run_id"`
+	RunNumber        int               `json:"run_number"`
+	WorkspaceID      string            `json:"workspace_id"`
+	WorkflowName     string            `json:"workflow_name"`
+	JobName          string            `json:"job_name"`
+	WorkflowYAML     string            `json:"workflow_yaml"`
+	EventName        string            `json:"event_name"`
+	EventPayloadJSON string            `json:"event_payload_json"`
+	Vars             map[string]string `json:"vars,omitempty"`
+	Secrets          map[string]string `json:"secrets,omitempty"`
 }
 
 type UpdateTaskRequest struct {

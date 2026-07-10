@@ -27,6 +27,9 @@ message TaskPayload {
   string job_id = 1; string run_id = 2; int32 run_number = 3; string workspace_id = 4;
   string workflow_name = 5; string job_name = 6; string workflow_yaml = 7;
   string event_name = 8; string event_payload_json = 9;
+  // Workspace-scoped vars/secrets, exposed to the job as vars.*/secrets.*.
+  // Secrets are decrypted server-side just before being sent here.
+  map<string, string> vars = 10; map<string, string> secrets = 11;
 }
 
 message FetchTaskRequest  {}

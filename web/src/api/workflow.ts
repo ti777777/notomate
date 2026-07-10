@@ -115,3 +115,60 @@ export const getWorkflowJobLogs = async (workspaceId: string, runId: string, job
   );
   return response.data as WorkflowJobLogs;
 };
+
+export interface WorkflowVarData {
+  id: string;
+  workspace_id: string;
+  key: string;
+  value: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+}
+
+export interface WorkflowSecretData {
+  id: string;
+  workspace_id: string;
+  key: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+}
+
+export const getWorkflowVars = async (workspaceId: string) => {
+  const response = await axios.get(`/api/v1/workspaces/${workspaceId}/vars`, { withCredentials: true });
+  return response.data as WorkflowVarData[];
+};
+
+export const createWorkflowVar = async (workspaceId: string, data: { key: string; value: string }) => {
+  const response = await axios.post(`/api/v1/workspaces/${workspaceId}/vars`, data, { withCredentials: true });
+  return response.data as WorkflowVarData;
+};
+
+export const updateWorkflowVar = async (workspaceId: string, key: string, value: string) => {
+  await axios.put(`/api/v1/workspaces/${workspaceId}/vars/${key}`, { value }, { withCredentials: true });
+};
+
+export const deleteWorkflowVar = async (workspaceId: string, key: string) => {
+  await axios.delete(`/api/v1/workspaces/${workspaceId}/vars/${key}`, { withCredentials: true });
+};
+
+export const getWorkflowSecrets = async (workspaceId: string) => {
+  const response = await axios.get(`/api/v1/workspaces/${workspaceId}/secrets`, { withCredentials: true });
+  return response.data as WorkflowSecretData[];
+};
+
+export const createWorkflowSecret = async (workspaceId: string, data: { key: string; value: string }) => {
+  const response = await axios.post(`/api/v1/workspaces/${workspaceId}/secrets`, data, { withCredentials: true });
+  return response.data as WorkflowSecretData;
+};
+
+export const updateWorkflowSecret = async (workspaceId: string, key: string, value: string) => {
+  await axios.put(`/api/v1/workspaces/${workspaceId}/secrets/${key}`, { value }, { withCredentials: true });
+};
+
+export const deleteWorkflowSecret = async (workspaceId: string, key: string) => {
+  await axios.delete(`/api/v1/workspaces/${workspaceId}/secrets/${key}`, { withCredentials: true });
+};

@@ -51,15 +51,17 @@ type FetchTaskResponse struct {
 	Job   *TaskPayload `json:"job,omitempty"`
 }
 type TaskPayload struct {
-	JobID            string `json:"job_id"`
-	RunID            string `json:"run_id"`
-	RunNumber        int    `json:"run_number"`
-	WorkspaceID      string `json:"workspace_id"`
-	WorkflowName     string `json:"workflow_name"`
-	JobName          string `json:"job_name"`
-	WorkflowYAML     string `json:"workflow_yaml"`
-	EventName        string `json:"event_name"`
-	EventPayloadJSON string `json:"event_payload_json"`
+	JobID            string            `json:"job_id"`
+	RunID            string            `json:"run_id"`
+	RunNumber        int               `json:"run_number"`
+	WorkspaceID      string            `json:"workspace_id"`
+	WorkflowName     string            `json:"workflow_name"`
+	JobName          string            `json:"job_name"`
+	WorkflowYAML     string            `json:"workflow_yaml"`
+	EventName        string            `json:"event_name"`
+	EventPayloadJSON string            `json:"event_payload_json"`
+	Vars             map[string]string `json:"vars,omitempty"`
+	Secrets          map[string]string `json:"secrets,omitempty"`
 }
 
 type UpdateTaskRequest struct {
@@ -220,6 +222,11 @@ func (s *runnerServer) buildTaskPayload(job model.WorkflowJob) (*TaskPayload, er
 		return nil, status.Errorf(codes.Internal, "load workflow: %v", err)
 	}
 
+	vars, secrets, err := s.loadVarsAndSecrets(job.WorkspaceID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TaskPayload{
 		JobID:            job.ID,
 		RunID:            run.ID,
@@ -230,7 +237,39 @@ func (s *runnerServer) buildTaskPayload(job model.WorkflowJob) (*TaskPayload, er
 		WorkflowYAML:     wf.Definition,
 		EventName:        run.Event,
 		EventPayloadJSON: run.EventPayload,
+		Vars:             vars,
+		Secrets:          secrets,
 	}, nil
+}
+
+// loadVarsAndSecrets fetches the workspace's workflow vars/secrets and
+// decrypts secret values for delivery to the runner that just claimed the
+// job. Secrets are decrypted only at this point, right before being sent
+// over the authenticated gRPC channel to the claiming runner.
+func (s *runnerServer) loadVarsAndSecrets(workspaceID string) (map[string]string, map[string]string, error) {
+	varRows, err := s.db.FindWorkflowVars(workspaceID)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "load vars: %v", err)
+	}
+	vars := make(map[string]string, len(varRows))
+	for _, v := range varRows {
+		vars[v.Key] = v.Value
+	}
+
+	secretRows, err := s.db.FindWorkflowSecrets(workspaceID)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "load secrets: %v", err)
+	}
+	secrets := make(map[string]string, len(secretRows))
+	for _, sec := range secretRows {
+		plaintext, err := util.Decrypt(sec.ValueEncrypted, config.C.GetString(config.APP_SECRET))
+		if err != nil {
+			return nil, nil, status.Errorf(codes.Internal, "decrypt secret %q: %v", sec.Key, err)
+		}
+		secrets[sec.Key] = plaintext
+	}
+
+	return vars, secrets, nil
 }
 
 func (s *runnerServer) UpdateTask(ctx context.Context, req *UpdateTaskRequest) (*UpdateTaskResponse, error) {

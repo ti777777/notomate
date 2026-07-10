@@ -129,6 +129,8 @@ func (r *Runner) execute(ctx context.Context, task *client.TaskPayload, streamer
 		EventName:             task.EventName,
 		EventJSON:             task.EventPayloadJSON,
 		Env:                   r.jobEnv(task),
+		Vars:                  task.Vars,
+		Secrets:               task.Secrets,
 		Platforms:             config.Platforms(r.cfg.Labels),
 		ContainerDaemonSocket: r.cfg.DaemonSocket,
 		LogOutput:             true,

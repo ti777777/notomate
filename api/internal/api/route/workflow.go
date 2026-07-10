@@ -36,4 +36,14 @@ func RegisterWorkflow(api *echo.Group, h handler.Handler, authMiddleware middlew
 	g.GET("/:workspaceId/runs/:runId", h.GetWorkflowRun, member)
 	g.GET("/:workspaceId/runs/:runId/jobs/:jobId/logs", h.GetWorkflowJobLogs, member)
 	g.POST("/:workspaceId/runs/:runId/cancel", h.CancelWorkflowRun, ownerOrAdmin)
+
+	g.GET("/:workspaceId/vars", h.GetWorkflowVars, ownerOrAdmin)
+	g.POST("/:workspaceId/vars", h.CreateWorkflowVar, ownerOrAdmin)
+	g.PUT("/:workspaceId/vars/:key", h.UpdateWorkflowVar, ownerOrAdmin)
+	g.DELETE("/:workspaceId/vars/:key", h.DeleteWorkflowVar, ownerOrAdmin)
+
+	g.GET("/:workspaceId/secrets", h.GetWorkflowSecrets, ownerOrAdmin)
+	g.POST("/:workspaceId/secrets", h.CreateWorkflowSecret, ownerOrAdmin)
+	g.PUT("/:workspaceId/secrets/:key", h.UpdateWorkflowSecret, ownerOrAdmin)
+	g.DELETE("/:workspaceId/secrets/:key", h.DeleteWorkflowSecret, ownerOrAdmin)
 }
