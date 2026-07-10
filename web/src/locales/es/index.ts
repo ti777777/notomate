@@ -128,6 +128,7 @@ export default {
       yourApiKey: "Tu Clave API",
       done: "Hecho",
       userManagement: "Administración de Usuarios",
+      systemSettings: "Configuración del Sistema",
       users: "Usuarios",
       userList: "Lista de Usuarios",
       userName: "Nombre de Usuario",

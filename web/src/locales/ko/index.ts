@@ -128,6 +128,7 @@ export default {
       yourApiKey: "귀하의 API 키",
       done: "완료",
       userManagement: "사용자 관리",
+      systemSettings: "시스템 설정",
       users: "사용자",
       userList: "사용자 목록",
       userName: "사용자명",

@@ -128,6 +128,7 @@ export default {
       yourApiKey: "Ваш ключ API",
       done: "Готово",
       userManagement: "Управление пользователями",
+      systemSettings: "Системные настройки",
       users: "Пользователи",
       userList: "Список пользователей",
       userName: "Имя пользователя",

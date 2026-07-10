@@ -5,7 +5,7 @@ import { Eye, EyeOff, Trash2 } from "lucide-react"
 import { getRunners, deleteRunner, getRunnerRegistrationToken } from "@/api/runner"
 import { toast } from "@/stores/toast"
 
-// Instance-level runner management; rendered only for instance owners/admins.
+// Instance-level runner management; rendered only in the owner's System Settings tab.
 const RunnersSection = () => {
     const { t } = useTranslation()
     const [showToken, setShowToken] = useState(false)

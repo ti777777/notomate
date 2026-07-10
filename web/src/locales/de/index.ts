@@ -128,6 +128,7 @@ export default {
       yourApiKey: "Ihr API-Schlüssel",
       done: "Fertig",
       userManagement: "Benutzerverwaltung",
+      systemSettings: "Systemeinstellungen",
       users: "Benutzer",
       userList: "Benutzerliste",
       userName: "Benutzername",

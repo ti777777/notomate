@@ -9,7 +9,6 @@ import { Loader, RotateCcw, Trash2, UserPlus, X } from "lucide-react"
 import OneColumn from "@/components/onecolumn/OneColumn"
 import { useCurrentUserStore } from "@/stores/current-user"
 import { toast } from "@/stores/toast"
-import RunnersSection from "./RunnersSection"
 import WorkflowVarsSecretsSection from "./WorkflowVarsSecretsSection"
 
 const Settings = () => {
@@ -295,11 +294,6 @@ const Settings = () => {
                                     {/* Workspace-scoped workflow variables & secrets */}
                                     {isOwnerOrAdmin && (
                                         <WorkflowVarsSecretsSection />
-                                    )}
-
-                                    {/* Instance-level runner management */}
-                                    {(currentUser?.role === 'owner' || currentUser?.role === 'admin') && (
-                                        <RunnersSection />
                                     )}
 
                                     {isOwner && (

@@ -128,6 +128,7 @@ export default {
       yourApiKey: "你的 API 密钥",
       done: "完成",
       userManagement: "用户管理",
+      systemSettings: "系统设置",
       users: "用户",
       userList: "用户列表",
       userName: "用户名",
