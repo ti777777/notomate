@@ -6,6 +6,7 @@
 | 檔案 | 觸發方式 | 說明 |
 | --- | --- | --- |
 | [`scheduled-note.yml`](./scheduled-note.yml) | `schedule` / `workflow_dispatch` | 最小範本:不抓外部資料,單純示範定期在同一個 workspace 建立一則新筆記(例如每日日誌),並用標題去重避免手動重跑造成重複。 |
+| [`manual-note-from-input.yml`](./manual-note-from-input.yml) | `workflow_dispatch` | 沒有排程,純手動觸發:填入 `title`/`content` 兩個輸入欄位,就用該內容建立一則筆記;示範如何用 `github.event.inputs` 讀取 `workflow_dispatch` 的輸入。 |
 | [`rss-to-notes.yml`](./rss-to-notes.yml) | `schedule` / `workflow_dispatch` | 訂閱一個 RSS feed,每篇新文章各自建立一則筆記,並用內容全文搜尋做去重。 |
 | [`hacker-news-digest.yml`](./hacker-news-digest.yml) | `schedule` / `workflow_dispatch` | 每天彙整 Hacker News 熱門文章成單一摘要筆記,示範純 JSON API(不需金鑰)。 |
 | [`github-releases-watch.yml`](./github-releases-watch.yml) | `schedule` / `workflow_dispatch` | 監控指定 repo 的最新 GitHub release,有新版就建立通知筆記。 |
