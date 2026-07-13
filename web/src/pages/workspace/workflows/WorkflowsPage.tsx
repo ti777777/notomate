@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router-dom"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Plus, Workflow as WorkflowIcon, History } from "lucide-react"
+import { Plus, Workflow as WorkflowIcon, History, Settings } from "lucide-react"
 import useCurrentWorkspaceId from "@/hooks/use-currentworkspace-id"
 import { getWorkflows, updateWorkflowEnabled, WorkflowData } from "@/api/workflow"
 import { getWorkspaceMembers } from "@/api/workspace"
@@ -45,13 +45,22 @@ const WorkflowsPage = () => {
                         {t("pages.workflows.title")}
                     </div>
                     {isOwnerOrAdmin && (
-                        <button
-                            onClick={() => navigate("new")}
-                            className="px-3 py-2 flex gap-2 items-center text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
-                        >
-                            <Plus size={16} />
-                            {t("pages.workflows.newWorkflow")}
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <Link
+                                to="settings"
+                                className="px-3 py-2 flex gap-2 items-center text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
+                            >
+                                <Settings size={16} />
+                                {t("pages.workflows.settingsTitle")}
+                            </Link>
+                            <button
+                                onClick={() => navigate("new")}
+                                className="px-3 py-2 flex gap-2 items-center text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
+                            >
+                                <Plus size={16} />
+                                {t("pages.workflows.newWorkflow")}
+                            </button>
+                        </div>
                     )}
                 </div>
                 <div className="bg-white dark:bg-neutral-800 rounded shadow-sm w-full max-w-3xl">

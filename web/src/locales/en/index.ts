@@ -49,7 +49,9 @@ export default {
       dispatched: "Workflow run queued",
       validationFailed: "Workflow definition is invalid",
       jobs: "Jobs",
-      noInputs: "This workflow has no inputs."
+      noInputs: "This workflow has no inputs.",
+      settingsTitle: "Settings",
+      settingsNoAccess: "Only workspace owners and admins can view workflow settings."
     },
     signin: {
       "noAccount": "Don't have an account?"

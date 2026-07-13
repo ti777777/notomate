@@ -13,6 +13,7 @@ import SearchPage from './pages/workspace/notes/SearchPage';
 import Settings from './pages/workspace/settings/SettingsPage';
 import WorkflowsPage from './pages/workspace/workflows/WorkflowsPage';
 import WorkflowEditPage from './pages/workspace/workflows/WorkflowEditPage';
+import WorkflowSettingsPage from './pages/workspace/workflows/WorkflowSettingsPage';
 import RunsPage from './pages/workspace/workflows/RunsPage';
 import RunDetailPage from './pages/workspace/workflows/RunDetailPage';
 import { Toast } from './components/toast/Toast'
@@ -79,6 +80,7 @@ function App() {
               <Route path='settings' element={<Settings />} />
               <Route path='workflows' element={<WorkflowsPage />} />
               <Route path='workflows/new' element={<WorkflowEditPage />} />
+              <Route path='workflows/settings' element={<WorkflowSettingsPage />} />
               <Route path='workflows/:workflowId' element={<WorkflowEditPage />} />
               <Route path='workflows/:workflowId/runs' element={<RunsPage />} />
               <Route path='workflows/:workflowId/runs/:runId' element={<RunDetailPage />} />
