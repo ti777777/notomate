@@ -135,6 +135,8 @@ func (h Handler) CreateComment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	h.notifyCommentEvent(model.WorkflowEventCommentCreated, comment, user.ID)
+
 	return c.JSON(http.StatusCreated, toCommentResponse(h, comment))
 }
 
@@ -180,6 +182,8 @@ func (h Handler) UpdateComment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	h.notifyCommentEvent(model.WorkflowEventCommentUpdated, existingComment, user.ID)
+
 	return c.JSON(http.StatusOK, toCommentResponse(h, existingComment))
 }
 
@@ -208,6 +212,8 @@ func (h Handler) DeleteComment(c echo.Context) error {
 	if err := h.db.DeleteComment(existingComment); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	h.notifyCommentEvent(model.WorkflowEventCommentDeleted, existingComment, user.ID)
 
 	return c.NoContent(http.StatusNoContent)
 }
