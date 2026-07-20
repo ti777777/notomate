@@ -15,9 +15,10 @@ import { renderCommentBody } from "./commentMarkdown"
 interface NoteCardCommentsProps {
   workspaceId: string
   noteId: string
+  readOnly?: boolean
 }
 
-const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId }) => {
+const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId, readOnly = false }) => {
   const { t } = useTranslation()
   const { user } = useCurrentUserStore()
   const { addToast } = useToastStore()
@@ -40,7 +41,7 @@ const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId }) =>
   const { data: members = [] } = useQuery({
     queryKey: ["workspaceMembers", workspaceId],
     queryFn: () => getWorkspaceMembers(workspaceId),
-    enabled: expanded && !!workspaceId,
+    enabled: expanded && !!workspaceId && !readOnly,
   })
 
   const threads = useMemo(() => {
@@ -113,23 +114,25 @@ const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId }) =>
 
       {expanded && (
         <div className="mt-1">
-          <div className="flex gap-2 items-start px-4 pb-2">
-            <MentionTextarea
-              className="w-full text-sm border dark:border-neutral-600 rounded p-2 bg-white dark:bg-neutral-900 dark:text-gray-100 resize-none"
-              rows={1}
-              placeholder={t("comments.composerPlaceholder") as string}
-              value={composerBody}
-              onChange={setComposerBody}
-              members={members}
-            />
-            <button
-              className="p-1.5 text-primary disabled:opacity-40 shrink-0"
-              disabled={!composerBody.trim()}
-              onClick={handleSubmitComposer}
-            >
-              <Send size={16} />
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="flex gap-2 items-start px-4 pb-2">
+              <MentionTextarea
+                className="w-full text-sm border dark:border-neutral-600 rounded p-2 bg-white dark:bg-neutral-900 dark:text-gray-100 resize-none"
+                rows={1}
+                placeholder={t("comments.composerPlaceholder") as string}
+                value={composerBody}
+                onChange={setComposerBody}
+                members={members}
+              />
+              <button
+                className="p-1.5 text-primary disabled:opacity-40 shrink-0"
+                disabled={!composerBody.trim()}
+                onClick={handleSubmitComposer}
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          )}
 
           {threads.length === 0 ? (
             <div className="text-center text-xs text-gray-400 dark:text-neutral-500 py-3">
@@ -155,7 +158,7 @@ const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId }) =>
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{comment.created_by_name}</span>
                               <span className="text-xs text-gray-400"><NoteTime time={comment.created_at} /></span>
                               {comment.edited && <span className="text-xs text-gray-400">{t("comments.edited")}</span>}
-                              {user?.id === comment.created_by && editingId !== comment.id && (
+                              {!readOnly && user?.id === comment.created_by && editingId !== comment.id && (
                                 <DropdownMenu.Root>
                                   <DropdownMenu.Trigger asChild>
                                     <button className="ml-auto p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
@@ -218,23 +221,25 @@ const NoteCardComments: FC<NoteCardCommentsProps> = ({ workspaceId, noteId }) =>
                       ))}
                     </div>
 
-                    <div className="mt-2 flex gap-2 items-start pl-7">
-                      <MentionTextarea
-                        className="w-full text-xs border dark:border-neutral-600 rounded p-1.5 bg-white dark:bg-neutral-900 dark:text-gray-100 resize-none"
-                        rows={1}
-                        placeholder={t("comments.replyPlaceholder") as string}
-                        value={replyBodies[anchor.thread_id] ?? ""}
-                        onChange={value => setReplyBodies(prev => ({ ...prev, [anchor.thread_id]: value }))}
-                        members={members}
-                      />
-                      <button
-                        className="p-1 text-primary disabled:opacity-40"
-                        disabled={!(replyBodies[anchor.thread_id] ?? "").trim()}
-                        onClick={() => handleSubmitReply(anchor.thread_id)}
-                      >
-                        <Send size={14} />
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="mt-2 flex gap-2 items-start pl-7">
+                        <MentionTextarea
+                          className="w-full text-xs border dark:border-neutral-600 rounded p-1.5 bg-white dark:bg-neutral-900 dark:text-gray-100 resize-none"
+                          rows={1}
+                          placeholder={t("comments.replyPlaceholder") as string}
+                          value={replyBodies[anchor.thread_id] ?? ""}
+                          onChange={value => setReplyBodies(prev => ({ ...prev, [anchor.thread_id]: value }))}
+                          members={members}
+                        />
+                        <button
+                          className="p-1 text-primary disabled:opacity-40"
+                          disabled={!(replyBodies[anchor.thread_id] ?? "").trim()}
+                          onClick={() => handleSubmitReply(anchor.thread_id)}
+                        >
+                          <Send size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
