@@ -50,12 +50,16 @@ export class AuthExtension {
     // Parse document name: "note:{id}", "whiteboard:{id}", "spreadsheet:{id}"
     const colonIdx = data.documentName.indexOf(':')
     const docType = colonIdx !== -1 ? data.documentName.substring(0, colonIdx) : data.documentName
-    const resourceId = colonIdx !== -1 ? data.documentName.substring(colonIdx + 1) : ''
+    const resourceId = colonIdx !== -1 ? data.documentName.substring(colonIdx + 1).split(':')[0] : ''
 
     if (docType === 'note') {
       const note = await this.db.findNote(resourceId)
       if (!note) throw new Error('Note not found')
-      if (!(await this.checkAccess(note, userId))) throw new Error('Access denied')
+      const generation = data.documentName.split(':')[2]
+      if (!isPublic && (generation === undefined || Number(generation) !== note.generation)) throw new Error('Stale note generation')
+      const allowed = note.visibility === 'private' ? userId === note.created_by
+        : userId != null && await this.db.isWorkspaceMember(userId, note.workspace_id)
+      if (!allowed && !(isPublic && note.visibility === 'public')) throw new Error('Access denied')
     } else if (docType === 'whiteboard' || docType === 'spreadsheet') {
       const view = await this.db.findView(resourceId)
       if (!view) throw new Error('View not found')

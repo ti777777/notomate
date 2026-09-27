@@ -5,26 +5,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/notomate/notomate/internal/db/notehistory"
 	"github.com/notomate/notomate/internal/model"
 	"gorm.io/gorm"
 )
 
-func (s SqliteDB) CreateNote(n model.Note) error {
-	return gorm.G[model.Note](s.getDB()).Create(context.Background(), &n)
+func (s SqliteDB) CreateNote(n model.Note) error { return notehistory.Create(s.getDB(), n) }
+func (s SqliteDB) UpdateNote(n model.Note) error { return notehistory.Update(s.getDB(), n) }
+func (s SqliteDB) DeleteNote(n model.Note) error { return notehistory.Delete(s.getDB(), n) }
+func (s SqliteDB) ListNoteVersions(id string, before int64, limit int) ([]model.NoteVersion, error) {
+	return notehistory.List(s.getDB(), id, before, limit)
 }
-
-func (s SqliteDB) UpdateNote(n model.Note) error {
-	_, err := gorm.G[model.Note](s.getDB()).
-		Where("id = ?", n.ID).
-		Select("title", "content", "visibility", "parent_id", "pinned", "updated_at", "updated_by").
-		Updates(context.Background(), n)
-	return err
+func (s SqliteDB) GetNoteVersion(id, version string) (model.NoteVersion, error) {
+	return notehistory.Get(s.getDB(), id, version)
 }
-
-func (s SqliteDB) DeleteNote(n model.Note) error {
-	_, err := gorm.G[model.Note](s.getDB()).Where("id = ?", n.ID).Delete(context.Background())
-	return err
+func (s SqliteDB) ApplyVersionOperation(req model.VersionOperation) (model.VersionResult, error) {
+	return notehistory.Operation(s.getDB(), req)
 }
+func (s SqliteDB) SaveDueNoteVersions(now int64) error { return notehistory.SaveDue(s.getDB(), now) }
 
 func (s SqliteDB) FindNote(n model.Note) (model.Note, error) {
 	note, err := gorm.

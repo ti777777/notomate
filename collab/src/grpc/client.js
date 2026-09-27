@@ -19,6 +19,7 @@ const METHODS = {
   GetUser:             '/collab.CollabService/GetUser',
   ValidateAPIKey:      '/collab.CollabService/ValidateAPIKey',
   IsWorkspaceMember:   '/collab.CollabService/IsWorkspaceMember',
+  VersionOperation: '/collab.CollabService/VersionOperation',
   GetNote:             '/collab.CollabService/GetNote',
   GetView:             '/collab.CollabService/GetView',
   UpdateNote:          '/collab.CollabService/UpdateNote',
@@ -35,11 +36,15 @@ function createGrpcClient(address) {
   function call(methodPath, request) {
     return new Promise((resolve, reject) => {
       const method = makeMethod(methodPath)
+      const metadata = new grpc.Metadata()
+      metadata.set('x-collab-secret', process.env.APP_SECRET || 'default_secret')
       rawClient.makeUnaryRequest(
         method.path,
         method.requestSerialize,
         method.responseDeserialize,
         request,
+        metadata,
+        { deadline: Date.now() + 15000 },
         (err, response) => {
           if (err) reject(err)
           else resolve(response)
@@ -75,6 +80,7 @@ function createGrpcClient(address) {
       return res.found
         ? {
             id: res.id,
+            revision: res.revision, generation: res.generation,
             title: res.title,
             content: res.content,
             visibility: res.visibility,
@@ -99,9 +105,8 @@ function createGrpcClient(address) {
 
     // --- database-extension ---
 
-    async updateNote(id, { title, content, updated_at, updated_by }) {
-      await call(METHODS.UpdateNote, { id, title, content, updated_at, updated_by })
-    },
+    async updateNote(id, fields) { return call(METHODS.UpdateNote, { id, ...fields }) },
+    async versionOperation(request) { return call(METHODS.VersionOperation, request) },
 
     async updateViewData(id, data, updated_at) {
       await call(METHODS.UpdateViewData, { id, data, updated_at })

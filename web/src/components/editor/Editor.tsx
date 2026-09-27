@@ -39,6 +39,8 @@ import { DragMenuContext, type MenuAction } from './DragMenuContext'
 
 interface Props {
   note: NoteData
+  readOnly?: boolean
+  controlledContent?: string
   canDrag?: boolean
   onChange?: (data: any) => void
   yDoc?: Y.Doc | null
@@ -85,6 +87,8 @@ const Editor: FC<Props> = ({
   note,
   onChange,
   canDrag = true,
+  readOnly = false,
+  controlledContent,
   yDoc,
   yText,
   yjsReady
@@ -106,6 +110,7 @@ const Editor: FC<Props> = ({
   const isComposing = useRef(false)
   const pendingUpdate = useRef<{ content: string } | null>(null)
   const editor = useEditor({
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         blockquote: {
@@ -497,6 +502,7 @@ const Editor: FC<Props> = ({
       // Only process if content actually changed
       if (newContent !== lastContentRef.current) {
         lastContentRef.current = newContent
+        onChange?.({ content: newContent })
 
         // If composing (IME input), store pending update and wait for composition end
         if (isComposing.current) {
@@ -511,13 +517,20 @@ const Editor: FC<Props> = ({
           }, 'local');
         }
 
-        // Trigger onChange callback if provided
-        if (onChange) {
-          onChange({ content: newContent })
-        }
       }
     },
   })
+
+  useEffect(() => { editor?.setEditable(!readOnly) }, [editor, readOnly])
+
+  useEffect(() => {
+    if (!editor || controlledContent === undefined) return
+    const parsed = controlledContent ? safeParse(controlledContent).parsed : DEFAULT_CONTENT
+    if (JSON.stringify(editor.getJSON()) !== JSON.stringify(parsed)) {
+      editor.commands.setContent(parsed, { emitUpdate: false })
+    }
+    lastContentRef.current = controlledContent
+  }, [editor, controlledContent])
 
   // Update ref when note prop changes (e.g., navigating to different note)
   useEffect(() => {

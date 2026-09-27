@@ -17,6 +17,7 @@ service CollabService {
 
   // Persistence
   rpc UpdateNote(UpdateNoteRequest) returns (UpdateNoteResponse);
+  rpc VersionOperation(VersionOperationRequest) returns (VersionOperationResponse);
   rpc UpdateViewData(UpdateViewDataRequest) returns (UpdateViewDataResponse);
   rpc GetViewObjects(GetViewObjectsRequest) returns (GetViewObjectsResponse);
   rpc CreateViewObject(CreateViewObjectRequest) returns (CreateViewObjectResponse);
@@ -34,13 +35,36 @@ message IsWorkspaceMemberRequest  { string user_id = 1; string workspace_id = 2;
 message IsWorkspaceMemberResponse { bool is_member = 1; }
 
 message GetNoteRequest  { string id = 1; }
-message GetNoteResponse { bool found = 1; string id = 2; string title = 3; string content = 4; string visibility = 5; string workspace_id = 6; string created_by = 7; }
+message GetNoteResponse { bool found = 1; string id = 2; string title = 3; string content = 4; string visibility = 5; string workspace_id = 6; string created_by = 7; int64 revision = 8; int64 generation = 9; }
 
 message GetViewRequest  { string id = 1; }
 message GetViewResponse { bool found = 1; string id = 2; string data = 3; string visibility = 4; string workspace_id = 5; string created_by = 6; }
 
-message UpdateNoteRequest  { string id = 1; string title = 2; string content = 3; string updated_at = 4; string updated_by = 5; }
-message UpdateNoteResponse {}
+message UpdateNoteRequest  { string id = 1; string title = 2; string content = 3; string updated_at = 4; string updated_by = 5; optional int64 revision = 6; optional int64 generation = 7; }
+message UpdateNoteResponse { int64 revision = 1; }
+
+// Requires x-collab-secret metadata. Result is the application's JSON Note/NoteVersion.
+message VersionOperationRequest {
+ string note_id = 1; string workspace_id = 2; string user_id = 3;
+ string version_id = 4; string name = 5; string operation_id = 6;
+ optional int64 expected_revision = 7;
+}
+message VersionOperationResponse {
+ // Described in docs/note-history.md; JSON codec carries nested objects.
+ NoteSnapshot note = 1; NoteVersion version = 2; bool replayed = 3;
+}
+message NoteSnapshot {
+ string id = 1; string workspace_id = 2; string title = 3; string content = 4;
+ int64 revision = 5; int64 generation = 6;
+ string parent_id = 7; string visibility = 8; bool pinned = 9;
+ string created_at = 10; string created_by = 11; string updated_at = 12; string updated_by = 13;
+}
+message NoteVersion {
+ string id = 1; string note_id = 2; string workspace_id = 3; int64 sequence = 4;
+ string title = 5; string content = 6; string content_hash = 7; int32 format_version = 8;
+ string name = 9; string source = 10; string source_version_id = 11;
+ string created_at = 12; string created_by = 13;
+}
 
 message UpdateViewDataRequest  { string id = 1; string data = 2; string updated_at = 3; }
 message UpdateViewDataResponse {}

@@ -12,6 +12,8 @@ import (
 	"github.com/notomate/notomate/internal/db"
 	"github.com/notomate/notomate/internal/storage"
 	"github.com/notomate/notomate/internal/workflow"
+	"log"
+	"time"
 )
 
 func New(db db.DB, storage storage.Storage, engine *workflow.Engine) (*echo.Echo, error) {
@@ -42,5 +44,21 @@ func New(db db.DB, storage storage.Storage, engine *workflow.Engine) (*echo.Echo
 	route.RegisterWorkflow(api, *handler, *auth, *workspace)
 	route.RegisterMessaging(api, *handler, *auth, *workspace)
 
+	stop := make(chan struct{})
+	e.Server.RegisterOnShutdown(func() { close(stop) })
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				if err := db.SaveDueNoteVersions(time.Now().UnixMilli()); err != nil {
+					log.Printf("note history snapshot failed: %v", err)
+				}
+			}
+		}
+	}()
 	return e, nil
 }

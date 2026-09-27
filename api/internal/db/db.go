@@ -42,6 +42,10 @@ type UserRepository interface {
 	DeleteUser(id string) error
 }
 type NoteRepository interface {
+ ListNoteVersions(noteID string, before int64, limit int) ([]model.NoteVersion, error)
+ GetNoteVersion(noteID, versionID string) (model.NoteVersion, error)
+ ApplyVersionOperation(req model.VersionOperation) (model.VersionResult, error)
+ SaveDueNoteVersions(now int64) error
 	CreateNote(n model.Note) error
 	UpdateNote(n model.Note) error
 	DeleteNote(n model.Note) error

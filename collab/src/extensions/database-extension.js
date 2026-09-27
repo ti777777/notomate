@@ -16,8 +16,9 @@ import * as Y from 'yjs'
  *   spreadsheet:{viewId}  - Spreadsheet documents
  */
 export class DatabaseExtension {
-  constructor({ db }) {
+  constructor({ db, history }) {
     this.db = db
+    this.history = history
   }
 
   /**
@@ -30,7 +31,7 @@ export class DatabaseExtension {
     }
     return {
       type: documentName.substring(0, colonIdx),
-      id: documentName.substring(colonIdx + 1),
+      id: documentName.substring(colonIdx + 1).split(':')[0],
     }
   }
 
@@ -45,7 +46,7 @@ export class DatabaseExtension {
     try {
       switch (type) {
         case 'note':
-          await this.initializeNote(document, id)
+          await this.history.initialize(document, id)
           break
         case 'whiteboard':
           await this.initializeWhiteboard(document, id)
@@ -58,6 +59,7 @@ export class DatabaseExtension {
       }
     } catch (err) {
       console.error(`[DB] Error loading document ${documentName}:`, err)
+      throw err
     }
   }
 
@@ -72,7 +74,7 @@ export class DatabaseExtension {
     try {
       switch (type) {
         case 'note':
-          await this.persistNote(document, id, data)
+          await this.history.persist(document)
           break
         case 'whiteboard':
           await this.persistWhiteboard(document, id)
@@ -83,29 +85,8 @@ export class DatabaseExtension {
       }
     } catch (err) {
       console.error(`[DB] Error storing document ${documentName}:`, err)
+      throw err
     }
-  }
-
-  /**
-   * Initialize a note Y.Doc from the notes table
-   */
-  async initializeNote(document, noteId) {
-    const note = await this.db.findNote(noteId)
-    if (!note) {
-      return
-    }
-
-    document.transact(() => {
-      const yContent = document.getMap('content')
-      if (note.content && !yContent.has('data')) {
-        yContent.set('data', note.content)
-      }
-
-      const yMeta = document.getMap('meta')
-      if (!yMeta.has('title')) {
-        yMeta.set('title', note.title || '')
-      }
-    })
   }
 
   /**
@@ -188,29 +169,6 @@ export class DatabaseExtension {
         console.error(`[DB] Error parsing spreadsheet data:`, e)
       }
     }
-  }
-
-  /**
-   * Persist note Y.Doc back to notes table
-   */
-  async persistNote(document, noteId, data) {
-    const yContent = document.getMap('content')
-    const yMeta = document.getMap('meta')
-
-    const content = yContent.get('data') || ''
-    const title = yMeta.get('title')
-    const now = new Date().toISOString()
-    const updatedBy = data.lastContext?.userId || 'system'
-
-    const note = await this.db.findNote(noteId)
-    if (!note) return
-
-    await this.db.updateNote(noteId, {
-      title: title !== undefined ? title : note.title,
-      content,
-      updated_at: now,
-      updated_by: updatedBy,
-    })
   }
 
   /**

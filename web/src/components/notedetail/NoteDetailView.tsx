@@ -12,6 +12,9 @@ interface NoteDetailViewProps {
     menu?: ReactNode
     wsTitle: string
     wsReady?: boolean
+    editable?: boolean
+    onContentChange?: (content: string) => void
+    editorSessionKey?: string
     onTitleChange: (title: string) => void
     yDoc?: any
     yText?: any
@@ -22,6 +25,9 @@ const NoteDetailView: FC<NoteDetailViewProps> = ({
     menu,
     wsTitle,
     wsReady,
+    editable = wsReady,
+    onContentChange,
+    editorSessionKey = '',
     onTitleChange,
     yDoc,
     yText
@@ -87,12 +93,13 @@ const NoteDetailView: FC<NoteDetailViewProps> = ({
                                     </>
                                 )}
                                 <EditableDiv
-                                    key={note.id}
+                                    key={`${note.id}-${editorSessionKey}`}
                                     value={displayTitle}
-                                    editable={true}
+                                    editable={!!editable}
                                     placeholder={t("notes.untitled")}
                                     className="flex-1 text-base font-medium text-gray-700 dark:text-gray-200 border-none outline-none bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600 min-w-0 truncate"
                                     onChange={onTitleChange}
+                                    onDraftChange={onContentChange ? onTitleChange : undefined}
                                 />
                             </div>
                             <div className="inline-flex flex-shrink-0">{menu}</div>
@@ -103,12 +110,16 @@ const NoteDetailView: FC<NoteDetailViewProps> = ({
                             <div className="lg:p-10">
                                 <div className="flex flex-col gap-2">
                                     <div className="px-4">
-                                        <div key={`editor-${note.id}`}>
+                                        {/* Reset only when the note generation changes. */}
+                                        <div key={`editor-${note.id}-${editorSessionKey}`}>
                                             <Editor
                                                 note={note}
                                                 yDoc={yDoc}
                                                 yText={yText}
                                                 yjsReady={wsReady}
+                                                readOnly={!editable}
+                                                controlledContent={onContentChange ? note.content : undefined}
+                                                onChange={onContentChange ? data => onContentChange(data.content) : undefined}
                                             />
                                         </div>
                                     </div>

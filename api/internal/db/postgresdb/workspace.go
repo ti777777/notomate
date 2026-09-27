@@ -45,7 +45,10 @@ func (s PostgresDB) CreateWorkspace(w model.Workspace) error {
 }
 
 func (s PostgresDB) DeleteWorkspace(id string) error {
-	_, err := gorm.G[model.Workspace](s.getDB()).Where("id = ?", id).Delete(context.Background())
-
-	return err
+	return s.getDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("workspace_id = ?", id).Delete(&model.NoteVersion{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ?", id).Delete(&model.Workspace{}).Error
+	})
 }

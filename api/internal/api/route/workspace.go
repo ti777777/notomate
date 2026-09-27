@@ -42,7 +42,13 @@ func RegisterWorkspace(api *echo.Group, h handler.Handler, authMiddleware middle
 
 	g.GET("/:workspaceId/notes", h.GetNotes)
 	g.POST("/:workspaceId/notes", h.CreateNote)
+
 	g.GET("/:workspaceId/notes/:id", h.GetNote)
+	g.GET("/:workspaceId/notes/:id/versions", h.ListNoteVersions)
+	g.GET("/:workspaceId/notes/:id/versions/:versionId", h.GetNoteVersion)
+	g.POST("/:workspaceId/notes/:id/versions", h.CreateNoteVersion)
+	g.POST("/:workspaceId/notes/:id/versions/prepare", h.PrepareNoteVersion)
+	g.POST("/:workspaceId/notes/:id/versions/:versionId/restore", h.RestoreNoteVersion)
 	g.PUT("/:workspaceId/notes/:id", h.UpdateNote)
 	g.DELETE("/:workspaceId/notes/:id", h.DeleteNote)
 	g.PATCH("/:workspaceId/notes/:id/visibility/:visibility", h.UpdateNoteVisibility)

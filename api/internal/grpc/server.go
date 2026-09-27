@@ -2,7 +2,10 @@ package grpcserver
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
+	"github.com/notomate/notomate/internal/config"
+	"google.golang.org/grpc/metadata"
 	"log"
 	"net"
 	"strings"
@@ -15,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/notomate/notomate/internal/db"
+	"github.com/notomate/notomate/internal/db/notehistory"
 	"github.com/notomate/notomate/internal/model"
 	"github.com/notomate/notomate/internal/storage"
 	"github.com/notomate/notomate/internal/util"
@@ -55,6 +59,8 @@ type GetNoteRequest struct {
 	ID string `json:"id"`
 }
 type GetNoteResponse struct {
+	Revision    int64  `json:"revision"`
+	Generation  int64  `json:"generation"`
 	Found       bool   `json:"found"`
 	ID          string `json:"id"`
 	Title       string `json:"title"`
@@ -77,13 +83,17 @@ type GetViewResponse struct {
 }
 
 type UpdateNoteRequest struct {
-	ID        string `json:"id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	UpdatedAt string `json:"updated_at"`
-	UpdatedBy string `json:"updated_by"`
+	Revision   *int64 `json:"revision"`
+	Generation *int64 `json:"generation"`
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Content    string `json:"content"`
+	UpdatedAt  string `json:"updated_at"`
+	UpdatedBy  string `json:"updated_by"`
 }
-type UpdateNoteResponse struct{}
+type UpdateNoteResponse struct {
+	Revision int64 `json:"revision"`
+}
 
 type UpdateViewDataRequest struct {
 	ID        string `json:"id"`
@@ -95,6 +105,7 @@ type UpdateViewDataResponse struct{}
 // ---------- Service interface ----------
 
 type CollabServiceServer interface {
+	VersionOperation(context.Context, *model.VersionOperation) (*model.VersionResult, error)
 	GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error)
 	ValidateAPIKey(ctx context.Context, req *ValidateAPIKeyRequest) (*ValidateAPIKeyResponse, error)
 	IsWorkspaceMember(ctx context.Context, req *IsWorkspaceMemberRequest) (*IsWorkspaceMemberResponse, error)
@@ -134,6 +145,9 @@ func registerCollabServiceServer(s *grpc.Server, srv CollabServiceServer) {
 		ServiceName: "collab.CollabService",
 		HandlerType: (*CollabServiceServer)(nil),
 		Methods: []grpc.MethodDesc{
+			makeHandler("/collab.CollabService/VersionOperation", func(ctx context.Context, req *model.VersionOperation) (interface{}, error) {
+				return srv.VersionOperation(ctx, req)
+			}),
 			makeHandler("/collab.CollabService/GetUser", func(ctx context.Context, req *GetUserRequest) (interface{}, error) {
 				return srv.GetUser(ctx, req)
 			}),
@@ -262,6 +276,7 @@ func (s *collabServer) GetNote(ctx context.Context, req *GetNoteRequest) (*GetNo
 		return nil, status.Errorf(codes.Internal, "find note: %v", err)
 	}
 	return &GetNoteResponse{
+		Revision: note.Revision, Generation: note.Generation,
 		Found:       true,
 		ID:          note.ID,
 		Title:       note.Title,
@@ -291,25 +306,106 @@ func (s *collabServer) GetView(ctx context.Context, req *GetViewRequest) (*GetVi
 }
 
 func (s *collabServer) UpdateNote(ctx context.Context, req *UpdateNoteRequest) (*UpdateNoteResponse, error) {
-	// Fetch current note to preserve visibility and workspace_id
+	if !isCollabService(ctx) {
+		return nil, status.Error(codes.Unauthenticated, "collab service authentication required")
+	}
 	note, err := s.db.FindNote(model.Note{ID: req.ID})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, status.Errorf(codes.NotFound, "note not found")
-		}
-		return nil, status.Errorf(codes.Internal, "find note: %v", err)
+		return nil, status.Error(codes.NotFound, "note not found")
 	}
-	note.Title = req.Title
-	note.Content = req.Content
-	note.UpdatedAt = req.UpdatedAt
-	note.UpdatedBy = req.UpdatedBy
+	if req.Revision == nil || req.Generation == nil || *req.Revision != note.Revision || *req.Generation != note.Generation {
+		return nil, status.Error(codes.Aborted, "stale note room")
+	}
+	if !s.canEditNote(note, req.UpdatedBy) {
+		return nil, status.Error(codes.PermissionDenied, "access denied")
+	}
+	changed := notehistory.Hash(note.Title, note.Content) != notehistory.Hash(req.Title, req.Content)
+	if !changed {
+		return &UpdateNoteResponse{Revision: note.Revision}, nil
+	}
+	note.Title, note.Content, note.UpdatedBy = req.Title, req.Content, req.UpdatedBy
+	note.UpdatedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	if err := s.db.UpdateNote(note); err != nil {
-		return nil, status.Errorf(codes.Internal, "update note: %v", err)
+		if errors.Is(err, notehistory.ErrConflict) {
+			return nil, status.Error(codes.Aborted, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "note save failed")
 	}
+	note.Revision++
 	if s.engine != nil {
 		s.engine.NotifyNoteEvent(model.WorkflowEventNoteUpdated, note, req.UpdatedBy)
 	}
-	return &UpdateNoteResponse{}, nil
+	return &UpdateNoteResponse{Revision: note.Revision}, nil
+}
+
+func isCollabService(ctx context.Context) bool {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok || config.C == nil {
+		return false
+	}
+	values := md.Get("x-collab-secret")
+	if len(values) != 1 {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(values[0]), []byte(config.C.GetString(config.APP_SECRET))) == 1
+}
+
+func (s *collabServer) canEditNote(n model.Note, userID string) bool {
+	if userID == "" || userID == "anonymous" {
+		return false
+	}
+	user, err := s.db.FindUserByID(userID)
+	if err != nil || user.Disabled {
+		return false
+	}
+	if n.Visibility == "private" {
+		return n.CreatedBy == userID
+	}
+	if n.Visibility != "public" && n.Visibility != "workspace" {
+		return false
+	}
+	members, err := s.db.FindWorkspaceUsers(model.WorkspaceUserFilter{WorkspaceID: n.WorkspaceID})
+	if err != nil {
+		return false
+	}
+	for _, m := range members {
+		if m.UserID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *collabServer) VersionOperation(ctx context.Context, req *model.VersionOperation) (*model.VersionResult, error) {
+	if !isCollabService(ctx) {
+		return nil, status.Error(codes.Unauthenticated, "collab service authentication required")
+	}
+	note, err := s.db.FindNote(model.Note{ID: req.NoteID})
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "note not found")
+	}
+	if !s.canEditNote(note, req.UserID) || note.WorkspaceID != req.WorkspaceID {
+		return nil, status.Error(codes.PermissionDenied, "access denied")
+	}
+	result, err := s.db.ApplyVersionOperation(*req)
+	if err != nil {
+		switch {
+		case errors.Is(err, notehistory.ErrConflict):
+			return nil, status.Error(codes.Aborted, err.Error())
+		case errors.Is(err, notehistory.ErrForbidden):
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		case errors.Is(err, notehistory.ErrInvalid):
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return nil, status.Error(codes.NotFound, "version not found")
+		default:
+			return nil, status.Error(codes.Internal, "version operation failed")
+		}
+	}
+	if req.VersionID != "" && !result.Replayed && s.engine != nil {
+		s.engine.NotifyNoteEvent(model.WorkflowEventNoteUpdated, result.Note, req.UserID)
+	}
+	return &result, nil
 }
 
 func (s *collabServer) UpdateViewData(ctx context.Context, req *UpdateViewDataRequest) (*UpdateViewDataResponse, error) {

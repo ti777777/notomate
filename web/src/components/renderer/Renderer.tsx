@@ -528,13 +528,35 @@ interface Node {
     attrs?: any
 }
 
+function HistoryAsset({ type, src, name }: { type: string; src: string; name: string }) {
+    const { t } = useTranslation()
+    const [missing, setMissing] = useState(false)
+    useEffect(() => {
+        setMissing(false)
+        const abort = new AbortController()
+        try {
+            const url = new URL(src, window.location.origin)
+            if (url.origin === window.location.origin) {
+                void fetch(url, { method: 'HEAD', signal: abort.signal }).then(res => { if (!res.ok) setMissing(true) }).catch(() => {})
+            }
+        } catch { setMissing(true) }
+        return () => abort.abort()
+    }, [src])
+    if (missing || !src) return <p className="my-2 rounded border p-3 text-sm text-muted-foreground dark:border-neutral-700">{name} · {t('history.missingAsset')}</p>
+    if (type === 'image') return <img src={src} alt={name} onError={() => setMissing(true)} className="my-2 max-h-[620px] max-w-full rounded" />
+    if (type === 'video') return <video src={src} controls onError={() => setMissing(true)} className="max-w-full" />
+    if (type === 'audio') return <audio src={src} controls onError={() => setMissing(true)} className="max-w-full" />
+    return <a href={src} target="_blank" rel="noopener noreferrer" className="underline">{name}</a>
+}
+
 interface RendererProps {
+    historyMode?: boolean
     content: string
     maxNodes?: number
     workspaceId?: string
 }
 
-const Renderer: React.FC<RendererProps> = ({ content, maxNodes, workspaceId: workspaceIdProp }) => {
+const Renderer: React.FC<RendererProps> = ({ content, maxNodes, workspaceId: workspaceIdProp, historyMode = false }) => {
     const { t } = useTranslation()
     const [isExpanded, setIsExpanded] = useState(false)
 
@@ -551,6 +573,15 @@ const Renderer: React.FC<RendererProps> = ({ content, maxNodes, workspaceId: wor
         const renderContent = () =>
             node.content?.map((child, idx) => renderNode(child, idx))
 
+        if (historyMode && ['viewNode', 'subPage', 'youtubeEmbed', 'threadsEmbed', 'instagramEmbed', 'tiktokEmbed'].includes(node.type)) {
+            return <div key={key} className="my-3 rounded border p-3 text-sm dark:border-neutral-700">
+                <p className="font-medium">{node.attrs?.name || node.attrs?.title || node.type}</p>
+                <p className="text-muted-foreground">{t('history.referenceOnly')}</p>
+            </div>
+        }
+        if (historyMode && ['image', 'attachment', 'video', 'audio'].includes(node.type)) {
+            return <HistoryAsset key={key} type={node.type} src={node.attrs?.src || ''} name={node.attrs?.name || node.attrs?.alt || node.type} />
+        }
         switch (node.type) {
             case 'paragraph':
                 return node.content ? <p className='leading-6' key={key}>{renderContent()}</p> : <div className='h-6' key={key}></div>

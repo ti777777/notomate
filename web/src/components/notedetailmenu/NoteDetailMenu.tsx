@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { deleteNote, NoteData, updateNoteVisibility, updateNotePinned } from "@/api/note"
 import { useTranslation } from "react-i18next"
-import { Trash2, Ellipsis, Globe2, Lock, Building, Pin, PinOff } from "lucide-react"
+import { Trash2, Ellipsis, Globe2, Lock, Building, Pin, PinOff, History, Save } from "lucide-react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useToastStore } from "@/stores/toast"
 import { Visibility } from "@/types/visibility"
@@ -11,9 +11,12 @@ import { useCurrentUserStore } from "@/stores/current-user"
 
 interface NoteDetailMenuProps {
     note: NoteData
+    onHistory?: (create?: boolean) => void
+    saveStatus?: string
+    onDraft?: () => void
 }
 
-const NoteDetailMenu: FC<NoteDetailMenuProps> = ({ note }) => {
+const NoteDetailMenu: FC<NoteDetailMenuProps> = ({ note, onHistory, saveStatus, onDraft }) => {
     const { t } = useTranslation()
     const { workspaceId } = useParams<{ workspaceId?: string }>()
     const { addToast } = useToastStore()
@@ -119,6 +122,12 @@ const NoteDetailMenu: FC<NoteDetailMenuProps> = ({ note }) => {
 
     const menuItems = workspaceId && (
         <>
+            {saveStatus && <div role="status" className="px-3 py-2 text-xs text-muted-foreground">{t(`history.saveStatus.${saveStatus}`)}</div>}
+            {onDraft && <button className="px-3 py-2 flex items-center gap-3 w-full text-left rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => { setIsMenuOpened(false); onDraft() }}><Save size={16} />{t('history.viewDraft')}</button>}
+            {note.history_enabled && onHistory && <>
+                <button className="px-3 py-2 flex items-center gap-3 w-full text-left rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => { setIsMenuOpened(false); onHistory(false) }}><History size={16} />{t('history.title')}</button>
+                <button className="px-3 py-2 flex items-center gap-3 w-full text-left rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => { setIsMenuOpened(false); onHistory(true) }}><Save size={16} />{t('history.create')}</button>
+            </>}
             {isCreator && (
                 <button
                     className="px-3 py-2 flex items-center gap-3 w-full text-left rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -168,7 +177,7 @@ const NoteDetailMenu: FC<NoteDetailMenuProps> = ({ note }) => {
     return (
         <>
             <div className="relative">
-                <button ref={buttonRef} className="p-2" onClick={handleOpenMenu}>
+                <button data-note-menu ref={buttonRef} className="p-2" onClick={handleOpenMenu}>
                     <Ellipsis size={16} />
                 </button>
                 {isLg && isMenuOpened && (

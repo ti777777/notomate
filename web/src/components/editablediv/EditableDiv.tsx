@@ -4,6 +4,7 @@ interface EditableDivProps {
   value?: string;
   placeholder?: string;
   onChange?: (value: string) => void;
+  onDraftChange?: (value: string) => void;
   className?: string;
   editable?: boolean;
 }
@@ -12,11 +13,14 @@ const EditableDiv: FC<EditableDivProps> = ({
   value = "",
   placeholder = "",
   onChange = () => {},
+  onDraftChange,
   className = "",
   editable = true,
   ...props
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
   const isUserEditing = useRef(false);
   const isComposing = useRef(false);
   const pendingValue = useRef<string | null>(null);
@@ -31,6 +35,7 @@ const EditableDiv: FC<EditableDivProps> = ({
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     isUserEditing.current = true;
     const text = e.currentTarget.innerText;
+    onDraftChange?.(text === '<br>' || text === '<br/>' || text.trim() === '' ? '' : text);
 
     if (text === "<br>" || text === "<br/>" || text.trim() === "") {
       e.currentTarget.innerText = "";
@@ -75,6 +80,9 @@ const EditableDiv: FC<EditableDivProps> = ({
     // Reset editing flag after a short delay to allow onChange to complete
     setTimeout(() => {
       isUserEditing.current = false;
+      if (onDraftChange && divRef.current && divRef.current.innerText !== valueRef.current) {
+        divRef.current.innerText = valueRef.current;
+      }
     }, 100);
   };
 

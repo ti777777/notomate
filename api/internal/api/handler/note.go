@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/notomate/notomate/internal/db/notehistory"
 	"github.com/notomate/notomate/internal/model"
 	"github.com/notomate/notomate/internal/util"
 
@@ -20,12 +22,18 @@ type CreateNoteRequest struct {
 }
 
 type UpdateNoteRequest struct {
-	Title    string `json:"title"`
-	Content  string `json:"content"`
-	ParentID string `json:"parent_id"`
+	Revision   *int64 `json:"revision"`
+	Generation *int64 `json:"generation"`
+	Title      string `json:"title"`
+	Content    string `json:"content"`
+	ParentID   string `json:"parent_id"`
 }
 
 type GetNoteResponse struct {
+	Revision           int64    `json:"revision"`
+	Generation         int64    `json:"generation"`
+	HistoryEnabled     bool     `json:"history_enabled"`
+	CanEdit            bool     `json:"can_edit"`
 	ID                 string   `json:"id"`
 	WorkspaceID        string   `json:"workspace_id"`
 	ParentID           string   `json:"parent_id"`
@@ -119,7 +127,8 @@ func (h Handler) GetPublicNotes(c echo.Context) error {
 	for _, b := range notes {
 		createdByName, createdByAvatarUrl := h.getUserInfoByID(b.CreatedBy)
 		res = append(res, GetNoteResponse{
-			ID:                 b.ID,
+			ID:       b.ID,
+			Revision: b.Revision, Generation: b.Generation, HistoryEnabled: notehistory.Enabled(),
 			WorkspaceID:        b.WorkspaceID,
 			ParentID:           b.ParentID,
 			Visibility:         b.Visibility,
@@ -184,7 +193,8 @@ func (h Handler) GetNotes(c echo.Context) error {
 	for _, b := range notes {
 		createdByName, createdByAvatarUrl := h.getUserInfoByID(b.CreatedBy)
 		res = append(res, GetNoteResponse{
-			ID:                 b.ID,
+			ID:       b.ID,
+			Revision: b.Revision, Generation: b.Generation, HistoryEnabled: notehistory.Enabled(),
 			WorkspaceID:        b.WorkspaceID,
 			ParentID:           b.ParentID,
 			Visibility:         b.Visibility,
@@ -219,6 +229,9 @@ func (h Handler) GetNote(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+	if b.WorkspaceID != workspaceId {
+		return echo.NewHTTPError(404)
+	}
 	user := c.Get("user").(model.User)
 
 	isVisible := false
@@ -236,7 +249,8 @@ func (h Handler) GetNote(c echo.Context) error {
 
 	createdByName, createdByAvatarUrl := h.getUserInfoByID(b.CreatedBy)
 	res := GetNoteResponse{
-		ID:                 b.ID,
+		ID:       b.ID,
+		Revision: b.Revision, Generation: b.Generation, HistoryEnabled: notehistory.Enabled(),
 		WorkspaceID:        b.WorkspaceID,
 		ParentID:           b.ParentID,
 		Visibility:         b.Visibility,
@@ -251,6 +265,8 @@ func (h Handler) GetNote(c echo.Context) error {
 		UpdatedBy:          h.getUserNameByID(b.UpdatedBy),
 	}
 
+	res.CanEdit = (b.Visibility == "private" && b.CreatedBy == user.ID) || ((b.Visibility == "public" || b.Visibility == "workspace") && h.isUserWorkspaceMember(user.ID, b.WorkspaceID))
+	res.HistoryEnabled = notehistory.Enabled() && res.CanEdit
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -362,6 +378,12 @@ func (h Handler) UpdateNote(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	if existingNote.WorkspaceID != workspaceId {
+		return echo.NewHTTPError(404)
+	}
+	if (req.Revision != nil && *req.Revision != existingNote.Revision) || (req.Generation != nil && *req.Generation != existingNote.Generation) {
+		return echo.NewHTTPError(409, "note changed")
+	}
 	user := c.Get("user").(model.User)
 
 	switch existingNote.Visibility {
@@ -390,6 +412,9 @@ func (h Handler) UpdateNote(c echo.Context) error {
 
 	n.WorkspaceID = workspaceId
 	n.ID = existingNote.ID
+	n.Revision = existingNote.Revision
+	n.Generation = existingNote.Generation
+	n.AdvanceGeneration = true
 	n.ParentID = req.ParentID
 	n.Title = req.Title
 	n.Content = content
@@ -403,12 +428,19 @@ func (h Handler) UpdateNote(c echo.Context) error {
 	err = h.db.UpdateNote(n)
 
 	if err != nil {
+		if errors.Is(err, notehistory.ErrConflict) {
+			return echo.NewHTTPError(409, err.Error())
+		}
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	h.notifyNoteEvent(model.WorkflowEventNoteUpdated, n, user.ID)
 
-	return c.JSON(http.StatusOK, existingNote)
+	saved, err := h.db.FindNote(n)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, saved)
 }
 
 func (h Handler) UpdateNoteVisibility(c echo.Context) error {
@@ -446,6 +478,9 @@ func (h Handler) UpdateNoteVisibility(c echo.Context) error {
 
 	n.WorkspaceID = workspaceId
 	n.ID = existingNote.ID
+	n.Revision = existingNote.Revision
+	n.Generation = existingNote.Generation
+	n.AdvanceGeneration = true
 	n.ParentID = existingNote.ParentID
 	n.Visibility = visibility
 	n.Pinned = existingNote.Pinned
@@ -502,6 +537,9 @@ func (h Handler) UpdateNotePin(c echo.Context) error {
 
 	n.WorkspaceID = workspaceId
 	n.ID = existingNote.ID
+	n.Revision = existingNote.Revision
+	n.Generation = existingNote.Generation
+	n.AdvanceGeneration = true
 	n.ParentID = existingNote.ParentID
 	n.Visibility = existingNote.Visibility
 	n.Pinned = pinned

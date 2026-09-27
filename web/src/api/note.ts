@@ -2,6 +2,10 @@ import axios from 'axios';
 import { Visibility } from '@/types/visibility';
 
 export interface NoteData {
+  revision?: number;
+  generation?: number;
+  history_enabled?: boolean;
+  can_edit?: boolean;
   id?: string;
   workspace_id?: string;
   parent_id?: string;
