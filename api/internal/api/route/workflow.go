@@ -1,6 +1,8 @@
 package route
 
 import (
+	"strings"
+
 	"github.com/notomate/notomate/internal/api/handler"
 	"github.com/notomate/notomate/internal/api/middlewares"
 	"github.com/notomate/notomate/internal/model"
@@ -11,7 +13,13 @@ import (
 
 func RegisterWorkflow(api *echo.Group, h handler.Handler, authMiddleware middlewares.AuthMiddleware, workspaceMiddleware middlewares.WorkspaceMiddleware) {
 	g := api.Group("/workspaces")
-	g.Use(authMiddleware.CheckJWT())
+	g.Use(middlewares.Skippable(authMiddleware.CheckJWT(), func(c echo.Context) bool {
+		// Skip JWT cookie auth for API-key requests (Authorization: Bearer
+		// ...) - ParseJWT below fully authenticates (and rejects) those on
+		// its own. Mirrors RegisterWorkspace's Bearer bypass, so personal
+		// API keys can manage workflows with the key owner's workspace role.
+		return strings.HasPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	}))
 	g.Use(authMiddleware.ParseJWT())
 	g.Use(workspaceMiddleware.CheckWorkspaceExists())
 
